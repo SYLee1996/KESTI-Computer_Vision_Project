@@ -55,8 +55,7 @@
       9. 관측종별 변수 다르게 사용
           9.1 ‘buoy’: ‘stnHgt’, ‘Td2m’, ‘RH2m’ 제거
           9.2 ‘ship’: ’stnHgt’ 제거
-
-</br>
+----
 
 + ### Model    
     + 단일 Encoder Layer와 이중 Decoder Layer로 구성
@@ -68,11 +67,12 @@
     + optimizer : AdamW 
     + EarlyStopping
 
-</br>
+----
 
 + ### Train  
     + SONDE 데이터의 경우 윈도우 사이즈별로 데이터를 예측하기 때문에 특정 시간대에 재구성 데이터가 겹치는 경우가 발생 -> 재구성 윈도우가 겹치는 경우, 겹친 부분의 평균값을 사용하도록 수정   
-
+    
+----
 
 + ### Result  
      + 관측종 'buoy'에 대한 USAD 학습 손실 
