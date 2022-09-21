@@ -72,12 +72,22 @@
 
 + ### Train  
     + SONDE 데이터의 경우 윈도우 사이즈별로 데이터를 예측하기 때문에 특정 시간대에 재구성 데이터가 겹치는 경우가 발생 -> 재구성 윈도우가 겹치는 경우, 겹친 부분의 평균값을 사용하도록 수정   
-    + Result  
-      {'precision': 0.9998805272707689,
-       'recall': 0.9998738395336857,
-       'f1-score': 0.9998771683052723,
-       'support': 11748352}
 
-     
+
++ ### Result  
+     + 관측종 'buoy'에 대한 USAD 학습 손실 
+
+     ![image](https://user-images.githubusercontent.com/30611947/191474640-eee3d3c7-f373-4af5-b890-78dc336652fc.png)
+
+
+     + ‘buoy’의 ‘6200092’ station에 대한 ‘Pressure’, ‘Pmsl’, ‘T2m’, ‘U10m’, ‘V10m’, ‘Altitude’, 및 Loss 시각화
+     + 모델 학습 시 validation set에 대한 loss의 75% quantile 평균값을 threshold로 사용(0.014911915051857462)
+
+     ![image](https://user-images.githubusercontent.com/30611947/191475317-4db030d8-8c8b-4b53-a7ac-8411112978d6.png)
+
+
+     + 특정 지점 및 고도의 KPOP QC와 USAD 이상감지 결과 시계열 비교 (2mT) : 지점명 GMAD(METAR)
+
+     ![image](https://user-images.githubusercontent.com/30611947/191475079-95d4b163-4e58-4542-b4e9-40be2abd7677.png)
 
 
