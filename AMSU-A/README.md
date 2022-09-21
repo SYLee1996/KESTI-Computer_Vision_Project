@@ -36,23 +36,31 @@
 ## Summary
 + ### Data preprocessing
 
-    1. InnQC2의 정상, 이상 위경도를 in4bc 데이터에 매치하여 정상 및 이상 분리
-    2. 사용하지 않는 1, 2, 3, 4, 15 채널 제외
-    3. 채널별 lat, lon 평균값 변수 생성
-    4. 채널별 bias_pred, obsTB, innov 평균값 변수 생성
-    5. 전지구를 총 24개의 grid로 분할하는 grid 변수 생성
-    
+      1. InnQC2의 정상, 이상 위경도를 in4bc 데이터에 매치하여 정상 및 이상 분리
+      
+      2. 사용하지 않는 1, 2, 3, 4, 15 채널 제외
+      
+      3. 채널별 lat, lon 평균값 변수 생성
+      
+      4. 채널별 bias_pred, obsTB, innov 평균값 변수 생성
+      
+      5. 전지구를 총 24개의 grid로 분할하는 grid 변수 생성
+
     ![image](https://user-images.githubusercontent.com/30611947/191458165-63fd7194-5b71-4333-96f7-f1ddca693722.png)
 
-    6. 각 grid에 속하는 데이터의 lat, lon 평균값 변수 생성
-    7. 각 grid에 속하는 데이터의 bias_pred, obsTB, innov 평균값 변수 생성
-    8. 데이터가 수집된 시각(00시, 06시, 12시, 18시), 월(6월, 7월)을 cyclical embedding을 통해 변수로 생성
-    
+      6. 각 grid에 속하는 데이터의 lat, lon 평균값 변수 생성
+      
+      7. 각 grid에 속하는 데이터의 bias_pred, obsTB, innov 평균값 변수 생성
+      
+      8. 데이터가 수집된 시각(00시, 06시, 12시, 18시), 월(6월, 7월)을 cyclical embedding을 통해 변수로 생성
+
     ![image](https://user-images.githubusercontent.com/30611947/187855556-a5fb2d77-cb60-48cf-8b06-e198ca141365.png)
-    
-    9. 56개의 scanpos, 10개 채널, 5개의 위성 및 정상, 비정상 변수들에 대해 label encoding을 통해 변수를 수치화
-    10. Min-Max scaling을 통해 변수 값의 범위 정규화
-    11. 위 전처리 후에도 NaN 값이 존재할 경우 1 값으로 대체
+
+      9. 56개의 scanpos, 10개 채널, 5개의 위성 및 정상, 비정상 변수들에 대해 label encoding을 통해 변수를 수치화
+      
+      10. Min-Max scaling을 통해 변수 값의 범위 정규화
+      
+      11. 위 전처리 후에도 NaN 값이 존재할 경우 1 값으로 대체
     
 </br>
 
