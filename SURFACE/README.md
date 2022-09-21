@@ -1,7 +1,6 @@
-# KESTI-DeepSVDD(AMSU-A)
+# KESTI-USAD(SURFACE)
 
-+ AMSU-A 위성 데이터의 이상탐지를 위한 DeepSVDD 기반의 baseline 모델 작성
-+ 파일당 천만 건의 데이터가 존재하기 때문에 샘플 데이터를 이용하여 학습 및 검증을 진행(추론 X)
++ SURFACE 데이터의 이상탐지를 위한 USAD 기반의 baseline 모델 작성
 
 ---- 
 
@@ -23,63 +22,56 @@
 
 ## Directory
         .
-        ├── Preprocessing.ipynb
-        ├── Train & Validation.ipynb
-        ├── model.py
-        ├── utils.py
-        ├── weights
-        └── Data
+        ├── SURFACE_INFERENCE.py
+        ├── SURFACE_MAIN.p
+        ├── SURFACE_MODEL.py
+        ├── SURFACE_PREPROCESSING.py
+        ├── SURFACE_UTILS.py
+        └── RESULTS
 
-        2 directories, 4 files
+        1 directories, 5 files
 ----
 
 ## Summary
 + ### Data preprocessing
 
-    1. InnQC2의 정상, 이상 위경도를 in4bc 데이터에 매치하여 정상 및 이상 분리
-    2. 사용하지 않는 1, 2, 3, 4, 15 채널 제외
-    3. 채널별 lat, lon 평균값 변수 생성
-    4. 채널별 bias_pred, obsTB, innov 평균값 변수 생성
-    5. 전지구를 총 24개의 grid로 분할하는 grid 변수 생성
-    
-    ![image](https://user-images.githubusercontent.com/30611947/191458165-63fd7194-5b71-4333-96f7-f1ddca693722.png)
+      1. coast line의 표기 없이 모든 -999.99데이터 Nan으로 변환
+      2. Station별 변수들의 결측률을 계산
+          2.1. 특정 station에서 모든 변수에 대한 결측률이 0.3이상인 경우 해당 station 제거
+          2.2. 특정 station에서 한 변수라도 결측률이 0.5 이상인 경우 해당 station 제거
 
-    6. 각 grid에 속하는 데이터의 lat, lon 평균값 변수 생성
-    7. 각 grid에 속하는 데이터의 bias_pred, obsTB, innov 평균값 변수 생성
-    8. 데이터가 수집된 시각(00시, 06시, 12시, 18시), 월(6월, 7월)을 cyclical embedding을 통해 변수로 생성
-    
-    ![image](https://user-images.githubusercontent.com/30611947/187855556-a5fb2d77-cb60-48cf-8b06-e198ca141365.png)
-    
-    9. 56개의 scanpos, 10개 채널, 5개의 위성 및 정상, 비정상 변수들에 대해 label encoding을 통해 변수를 수치화
-    10. Min-Max scaling을 통해 변수 값의 범위 정규화
-    11. 위 전처리 후에도 NaN 값이 존재할 경우 1 값으로 대체
-    
+      3. Station별 보간(linear) 수행
+      
+      4. 기압 변수를 활용하여 고도(Altitude) 변수 생성 (Feet -> Meter)
+      
+      5. ‘Date/Time’ 변수를 활용하여 해당 데이터가 몇 번 째 주 인지를 나타내는 ‘num_week’ 변수 생성
+      
+      6. ‘Date/Time’ 변수를 활용하여 cyclical embedding을 통한 ‘sin_hour’, ‘cos_hour’, ‘sin_day’, ‘cos_day’, ‘sin_month’, ‘cos_month’ 변수 생성
+      
+      7. 데이터 정규화(Min-max scaling)
+      
+      8. 모든 전처리 후 채워지지 않은 Nan값의 경우 최대값(1) 채워 넣음
+      
+      9. 관측종별 변수 다르게 사용
+          9.1 ‘buoy’: ‘stnHgt’, ‘Td2m’, ‘RH2m’ 제거
+          9.2 ‘ship’: ’stnHgt’ 제거
+
 </br>
 
 + ### Model    
-    + Baseline 모델이기 때문에, DeepSVDD를 이용
+    + 단일 Encoder Layer와 이중 Decoder Layer로 구성
+    + 약 10%의 데이터를 검증데이터로 사용
     + Ensemble이나 cross-validation은 적용하지 않음
     
-    + AE parameter
-        + scheduler: CosineAnnealingLR
-        + Loss : MSELoss   
-        + optimizer : AdamW 
-        + lr : 1e-4
-        + weight_decay : 1e-4     
-        + epoch : 3
-        
-    + DeepSVDD parameter
-        + scheduler: CosineAnnealingLR
-        + Loss : MSELoss   
-        + optimizer : AdamW 
-        + lr : 1e-4
-        + weight_decay : 1e-4    
-        + epoch : 1
+    + scheduler: CosineAnnealingLR
+    + Loss : 학습 초반에는 reconstruction error에 가중치를 주고, 학습 후반에는 adversarial training에 가중치를 줌
+    + optimizer : AdamW 
+    + EarlyStopping
+
 </br>
 
 + ### Train  
- 
-    + 30개의 샘플 데이터를 이용하여 학습 후, 1개의 데이터에 대하여 검증 진행
+    + SONDE 데이터의 경우 윈도우 사이즈별로 데이터를 예측하기 때문에 특정 시간대에 재구성 데이터가 겹치는 경우가 발생 -> 재구성 윈도우가 겹치는 경우, 겹친 부분의 평균값을 사용하도록 수정   
     + Result  
       {'precision': 0.9998805272707689,
        'recall': 0.9998738395336857,
