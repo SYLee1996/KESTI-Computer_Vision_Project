@@ -1,112 +1,91 @@
 # KESTI-DeepSVDD(AMSU-A)
 
-+ AMSU-A 위성 데이터의 이상탐지를 위한 DeepSVDD 기반의 baseline 모델 작성 
-+ 2021061518, 2021061600, 2021061606 3개 time의 데이터로만 진행한 sample code 
- 
++ AMSU-A 위성 데이터의 이상탐지를 위한 DeepSVDD 기반의 baseline 모델 작성
++ 파일당 천만 건의 데이터가 존재하기 때문에 샘플 데이터를 이용하여 학습 및 검증을 진행(추론 X)
+
+---- 
+
+## Environment 
++ NIA 서버 기준(cudnn7, ubuntu18.04)
++ 사용한 Docker image는 Docker Hub에 업로드되어 환경을 제공합니다.
+  + https://hub.docker.com/r/lsy2026/computer_vision/tags
+  
+## Libraries
+  + python==3.7.10
+  + pandas==1.3.5
+  + numpy==1.20.2
+  + xarray==0.20.1
+  + tqdm==4.51.0
+  + sklearn==1.0.1
+  + torch==1.9.0
+  
+----
+
+## Directory
+        .
+        ├── Preprocessing.ipynb
+        ├── Train & Validation.ipynb
+        ├── model.py
+        ├── utils.py
+        ├── weights
+        └── Data
+
+        2 directories, 4 files
 ----
 
 ## Summary
-+ ### Data      
-    + 최근 성층권 오존은 감소추세이며, 오존이 감소함에 따라 대기 중의 UV-B 흡수가 감소하고 지표에서의 UV-B량이 증가하여 인간에게 피부암, 백내장, 면역체계 악화를 촉진시킴
-    + 기상자료를 활용하여 미래시점에 대한 보다 정확한 자외선 산출 기술의 개발 필요성 증가
-    + 천리안위성 2A호의 관측 데이터를 사용하며, 총 16개의 채널이 존재(가시채널 4개, 적외채널 12개)
-    + 총 2년 치의 데이터가 존재하며 전처리 시 변수 형태 균일화, 결측값 대체 및 이상치 처리, 범주형 데이터의 0~1 범위 수치화, 관측 시간에 따른 cyclical encoding, min-max 정규화 등을 수행
-    + 결측값에 대한 보간 처리 시 여러 방법 중 ‘time’ 방식을 선택, ‘linear’ 또는 ‘poly’ 방식으로 보간 시 데이터의 주기적 특성이 반영되지 않는 문제 발생
++ ### Data preprocessing
+
+    1. InnQC2의 정상, 이상 위경도를 in4bc 데이터에 매치하여 정상 및 이상 분리
+    2. 사용하지 않는 1, 2, 3, 4, 15 채널 제외
+    3. 채널별 lat, lon 평균값 변수 생성
+    4. 채널별 bias_pred, obsTB, innov 평균값 변수 생성
+    5. 전지구를 총 24개의 grid로 분할하는 grid 변수 생성
     
-         ![image](https://user-images.githubusercontent.com/30611947/187855804-76c31c95-3ecb-4c4c-a5ac-a1f542b2ca74.png)
+    ![image](https://user-images.githubusercontent.com/30611947/191458165-63fd7194-5b71-4333-96f7-f1ddca693722.png)
+
+    6. 각 grid에 속하는 데이터의 lat, lon 평균값 변수 생성
+    7. 각 grid에 속하는 데이터의 bias_pred, obsTB, innov 평균값 변수 생성
+    8. 데이터가 수집된 시각(00시, 06시, 12시, 18시), 월(6월, 7월)을 cyclical embedding을 통해 변수로 생성
+    
+    ![image](https://user-images.githubusercontent.com/30611947/187855556-a5fb2d77-cb60-48cf-8b06-e198ca141365.png)
+    
+    9. 56개의 scanpos, 10개 채널, 5개의 위성 및 정상, 비정상 변수들에 대해 label encoding을 통해 변수를 수치화
+    10. Min-Max scaling을 통해 변수 값의 범위 정규화
+    11. 위 전처리 후에도 NaN 값이 존재할 경우 1 값으로 대체
+    
+</br>
+
++ ### Model    
+    + Baseline 모델이기 때문에, DeepSVDD를 이용
+    + Ensemble이나 cross-validation은 적용하지 않음
+    
+    + AE parameter
+        + scheduler: CosineAnnealingLR
+        + Loss : MSELoss   
+        + optimizer : AdamW 
+        + lr : 1e-4
+        + weight_decay : 1e-4     
+        + epoch : 3
         
-    + 주기적 특성이 보존되는 보간을 지점마다 수행하여 15개 모든 지점에 대해서 각각 적용
-    
-    + 보간 시, ‘uv’ 변수의 값에서 직전 시점과의 차이 값을 계산한 ‘diff’ 변수를 생성 후 일정 값(3 표준편차) 이상으로 급격히 변하는 구간은 nan처리 후 재보간 수행
-       
-         ![image](https://user-images.githubusercontent.com/30611947/187855338-edd2e8de-c308-458f-b85d-51a0f0d6fbc3.png)
-
-       
-    +  165번 지점의 보간을 5회 반복 수행한 경우 값의 변화를 나타내는 그림으로 보간을 한 번 수행했을 때보다 여러번 반복 수행한 경우 ‘UV’, ‘Diff’ 변수의 분포가 완만해지는 것을 확인할 수 있음 
-    
-    + 보간을 통해 이상치 및 결측치를 처리한 후, 15개의 범주를 가지는 ‘sateza‘, ’height‘ 변수 및 4개의 값을 가지는 ’landtype‘ 변수는 더미화를 수행하였으며, ’stn‘ 변수의 경우 0~1 사이의 값을 가지도록 수치화
-    
-    + 데이터의 시간적 정보를 반영하기 위해 ‘Date_time’ 변수에 대해 sine 및 cosine 함수를 이용한cyclical encoding을 수행
-         
-         ![image](https://user-images.githubusercontent.com/30611947/187855556-a5fb2d77-cb60-48cf-8b06-e198ca141365.png)
-         
-    + cyclical encoding을 통해 모델이 잘 학습할 수 있는 변수로 변환. x는 변수를 의미하며, 시간(hour) 기준 주기는 24시 이므로 max는 24, 일(day) 기준 주기는 31일이며 max는 31을 의미함
-    
+    + DeepSVDD parameter
+        + scheduler: CosineAnnealingLR
+        + Loss : MSELoss   
+        + optimizer : AdamW 
+        + lr : 1e-4
+        + weight_decay : 1e-4    
+        + epoch : 1
 </br>
 
-+ ### Model     
-    + 전처리된 데이터에 시간정보를 반영한 변수를 생성하였기 때문에, 입력데이터가 시간 순으로 들어가야 하는 시계열 학습 방식이 아닌 tabular data로써 다양한 모델 적용 가능하며
-tabular data에 우수한 성능을 보이는 머신러닝 및 딥러닝 모델 적용
++ ### Train  
+ 
+    + 30개의 샘플 데이터를 이용하여 학습 후, 1개의 데이터에 대하여 검증 진행
+    + Result  
+      {'precision': 0.9998805272707689,
+       'recall': 0.9998738395336857,
+       'f1-score': 0.9998771683052723,
+       'support': 11748352}
 
-    + 시도 모델: 머신러닝 모델(LightGBM) 딥러닝 모델(DNN, TabNet, LSTM), 앙상블 모델(Soft voting ensemble) 
-    + 후보 모델: LightGBM, DNN, TabNet 
-    + 모델 제외 사유: LSTM의 경우 window size 이용하여 데이터를 구성하는데, 처음의 window size 만큼은 예측이 불가
-    + 5-fold 진행
-
-</br>
-
-+ ### Train     
-    + CosineAnnealingLR - scheduler
-    + MSELoss - Loss  
-    + AdamW - optimizer
-    + amp.GradScaler        
-    + EarlyStopping(min_delta: 1e-6) 
-    + Baseline 실험을 통해 후보 모델별 성능을 도출하였으며, 실험 결과 DNN 모델이 LightGBM과 TabNet보다 우수한 결과를 보임을 알 수 있고 후처리의 여부가 유의미한 성능 변화를 주지 않는 것을 볼 수 있음
-    
-
-      | Model                | RMSE post-processing(O) | RMSE post-processing(X) |
-      |----------------------|-------------------------|-------------------------|
-      | LightGBM             |         0.629798        |       **0.629760**      |
-      | TabNet               |       **0.613479**      |         0.613494        |
-      | DNN                  |         0.604392        |       **0.604293**      |
-
-
-
-    + 따라서, 후처리를 하지 않은 DNN 모델을 최종 모델로 선정하였으며, 해당 최종 모델로 중요 변수 순위화 및 중요 변수 선택에 따른 성능 변화 등의 추가 실험을 진행
-    + SHAP value를 통해 변수 중요도를 구하였으며, 구한 중요변수 중 상위 50개만을 선택하여 학습을 진행함
-
-         ![image](https://user-images.githubusercontent.com/30611947/187861436-740868f4-f564-441b-bbbc-0b0943240f7b.png)
-
-----
-## Directory
-        .
-        ├── WEATHER_CONTEST_INFERENCE_ENSEMBLE.py
-        ├── 전처리, 학습, 추론.ipynb
-        ├── WEATHER_CONTEST_MAIN.py
-        ├── WEATHER_CONTEST_MODEL.py
-        ├── WEATHER_CONTEST_UTILS.py
-        ├── RESULTS
-        └── Data
-
-        2 directories, 5 files
----- 
-## Environment 
-+ (cuda10.2, cudnn7, ubuntu18.04)
-+ 사용한 Docker image는 Docker Hub에 업로드되어 환경을 제공합니다.
-  + https://hub.docker.com/r/lsy2026/weather_contest/tags
-  
-  
-## Libraries
-+ (cuda10.2, cudnn7, ubuntu18.04) 기준
-  + python==3.9.7
-  + pandas==1.3.4
-  + numpy==1.20.3
-  + tqdm==4.62.3
-  + sklearn==0.24.2
-  + torch==1.10.2+cu102
-  
-----
-
-## Result
-    
-    + 중요 변수만을 선택하여 학습 시, 상위 50개의 변수를 선택하여 학습한 경우 RMSE는 0.596673이며, 50개의 변수를 이용하여 앙상블 시 RMSE는 0.592461으로 RMSE 성능이 가장 좋은 것을 볼 수 있음
-    
-
-      | Model                | RMSE post-processing(O) | RMSE post-processing(X) |
-      |----------------------|-------------------------|-------------------------|
-      | TOP 30               |         0.609335        |       **0.609270**      |
-      | TOP 40               |         0.599597        |       **0.599517**      |
-      | TOP 50               |         0.599045        |       **0.596673**      |
-      | Ensemble             |         0.592531        |       **0.592461**      |
+     
 
 
