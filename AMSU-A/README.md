@@ -61,8 +61,8 @@
       10. Min-Max scaling을 통해 변수 값의 범위 정규화
       
       11. 위 전처리 후에도 NaN 값이 존재할 경우 1 값으로 대체
-    
-</br>
+      
+----
 
 + ### Model    
     + Baseline 모델이기 때문에, DeepSVDD를 이용
@@ -83,7 +83,7 @@
         + lr : 1e-4
         + weight_decay : 1e-4    
         + epoch : 1
-</br>
+----
 
 + ### Train  
  
