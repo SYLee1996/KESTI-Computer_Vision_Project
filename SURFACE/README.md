@@ -1,4 +1,4 @@
-# KESTI-USAD(SURFACE)
+# USAD for SURFACE data
 
 + SURFACE 데이터의 이상탐지를 위한 USAD 기반의 baseline 모델 작성
 
