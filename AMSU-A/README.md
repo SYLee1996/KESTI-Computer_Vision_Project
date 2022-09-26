@@ -1,4 +1,4 @@
-# KESTI-DeepSVDD(AMSU-A)
+# DeepSVDD for AMSU-A data
 
 + AMSU-A 위성 데이터의 이상탐지를 위한 DeepSVDD 기반의 baseline 모델 작성
 + 파일당 천만 건의 데이터가 존재하기 때문에 샘플 데이터를 이용하여 학습 및 검증을 진행(추론 X)
