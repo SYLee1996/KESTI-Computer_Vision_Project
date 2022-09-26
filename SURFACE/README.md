@@ -88,6 +88,6 @@
 
      + 특정 지점 및 고도의 KPOP QC와 USAD 이상감지 결과 시계열 비교 (2mT) : 지점명 GMAD(METAR)
 
-     ![image](https://user-images.githubusercontent.com/30611947/191475079-95d4b163-4e58-4542-b4e9-40be2abd7677.png)
+     <img width="1054" alt="image" src="https://user-images.githubusercontent.com/30611947/192328437-f3fdb383-80f9-4810-a931-451ad0db1839.png">
 
 
